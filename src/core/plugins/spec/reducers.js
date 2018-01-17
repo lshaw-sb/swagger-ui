@@ -1,6 +1,7 @@
 import { fromJS } from "immutable"
 import { fromJSOrdered, validateParam } from "core/utils"
 import win from "../../window"
+import {performanceLoggerStart,performanceLoggerStop } from "core/utils"
 
 import {
   UPDATE_SPEC,
@@ -22,9 +23,12 @@ import {
 export default {
 
   [UPDATE_SPEC]: (state, action) => {
-    return (typeof action.payload === "string")
+    performanceLoggerStart("UI:reducer:UPDATE_SPEC")
+    let returnValue = (typeof action.payload === "string")
       ? state.set("spec", action.payload)
       : state
+      performanceLoggerStop("UI:reducer:UPDATE_SPEC")
+      return returnValue
   },
 
   [UPDATE_URL]: (state, action) => {
@@ -32,11 +36,20 @@ export default {
   },
 
   [UPDATE_JSON]: (state, action) => {
-    return state.set("json", fromJSOrdered(action.payload))
+    performanceLoggerStart("UI:reducer:UPDATE_JSON")
+    let returnValue = state.set("json", fromJSOrdered(action.payload))
+    performanceLoggerStop("UI:reducer:UPDATE_JSON")
+    return returnValue
   },
 
   [UPDATE_RESOLVED]: (state, action) => {
-    return state.setIn(["resolved"], fromJSOrdered(action.payload))
+
+    performanceLoggerStart("UI:reducer:UPDATE_RESOLVED")
+     let orderedValue = fromJSOrdered(action.payload)
+     let returnValue = state.setIn(["resolved"], orderedValue)
+     performanceLoggerStop("UI:reducer:UPDATE_RESOLVED")
+    return returnValue
+
   },
 
   [UPDATE_PARAM]: ( state, {payload} ) => {

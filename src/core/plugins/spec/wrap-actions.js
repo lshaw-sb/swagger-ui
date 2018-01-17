@@ -1,11 +1,15 @@
+import {addBreakToPipelineBefore } from "core/utils"
+
 export const updateSpec = (ori, {specActions}) => (...args) => {
-  ori(...args)
-  specActions.parseToJson(...args)
+
+  addBreakToPipelineBefore(() => ori(...args),"updateSpec")
+  addBreakToPipelineBefore(() => specActions.parseToJson(...args),"parseToJson")
 }
 
 export const updateJsonSpec = (ori, {specActions}) => (...args) => {
-  ori(...args)
-  specActions.resolveSpec(...args)
+
+  addBreakToPipelineBefore(() => ori(...args),"updateJsonSpec")
+  addBreakToPipelineBefore(() => ori(specActions.resolveSpec(...args)),"resolveSpec")
 }
 
 // Log the request ( just for debugging, shouldn't affect prod )

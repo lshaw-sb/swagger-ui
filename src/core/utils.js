@@ -14,6 +14,46 @@ const DEFAULT_REPONSE_KEY = "default"
 
 export const isImmutable = (maybe) => Im.Iterable.isIterable(maybe)
 
+export function addBreakToPipelineBefore(func,log){
+
+  function afterTimeout() {
+    performanceLogger(" PIPELINE BREAK for 20MS for: "+log)
+    if(window.globalStopPipeLine) {
+      performanceLogger("PIPELINE INTERRUPTED!")
+      return
+    }
+    func()
+  }
+
+  setTimeout(afterTimeout, 20)
+}
+
+export function performanceLogger(str){
+
+  //  if (process.env.NODE_ENV !== "production") {
+      console.log(str)
+      console.timeStamp(str)
+    }
+  //}
+
+export function performanceLoggerStart(str){
+
+  // if (process.env.NODE_ENV !== "production") {
+
+  //feature/perf has josh version of this
+      console.log(str + " Performance Log START")
+      console.timeStamp(str + " Performance Log START")
+  // }
+}
+
+export function performanceLoggerStop(str){
+
+//  if (process.env.NODE_ENV !== "production") {
+    console.log(str + " Performance Log END")
+    console.timeStamp(str + " Performance Log END")
+  }
+//}
+
 export function isJSONObject (str) {
   try {
     var o = JSON.parse(str)
@@ -52,6 +92,7 @@ export function arrayify (thing) {
 }
 
 export function fromJSOrdered (js) {
+
   if(isImmutable(js))
     return js // Can't do much here
 

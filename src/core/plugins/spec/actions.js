@@ -2,7 +2,7 @@ import YAML from "js-yaml"
 import parseUrl from "url-parse"
 import serializeError from "serialize-error"
 import isString from "lodash/isString"
-import { isJSONObject } from "core/utils"
+import { isJSONObject,performanceLoggerStart,performanceLoggerStop,addBreakToPipelineBefore } from "core/utils"
 
 // Actions conform to FSA (flux-standard-actions)
 // {type: string,payload: Any|Error, meta: obj, error: bool}
@@ -51,6 +51,8 @@ export function updateJsonSpec(json) {
 }
 
 export const parseToJson = (str) => ({specActions, specSelectors, errActions}) => {
+  performanceLoggerStart("UI:action:parseToJson")
+
   let { specStr } = specSelectors
 
   let json = null
@@ -68,6 +70,7 @@ export const parseToJson = (str) => ({specActions, specSelectors, errActions}) =
       line: e.mark && e.mark.line ? e.mark.line + 1 : undefined
     })
   }
+  performanceLoggerStop("UI:action:parseToJson")
   if(json && typeof json === "object") {
     return specActions.updateJsonSpec(json)
   }
@@ -75,6 +78,9 @@ export const parseToJson = (str) => ({specActions, specSelectors, errActions}) =
 }
 
 export const resolveSpec = (json, url) => ({specActions, specSelectors, errActions, fn: { fetch, resolve, AST }, getConfigs}) => {
+
+  performanceLoggerStart("UI:action:resolveSpec")
+
   const {
     modelPropertyMacro,
     parameterMacro,
@@ -91,17 +97,14 @@ export const resolveSpec = (json, url) => ({specActions, specSelectors, errActio
 
   let { getLineNumberForPath } = AST
 
-  let specStr = specSelectors.specStr()
+  function processErrors(spec, errors, errActions,specStr,specActions){
 
-  return resolve({
-    fetch,
-    spec: json,
-    baseDoc: url,
-    modelPropertyMacro,
-    parameterMacro,
-    requestInterceptor,
-    responseInterceptor
-  }).then( ({spec, errors}) => {
+    performanceLoggerStart("UI:action:resolveSpec ASYNC")
+
+      if(window.globalStopPipeLine) {
+        return
+      }
+
       errActions.clear({
         type: "thrown"
       })
@@ -119,8 +122,25 @@ export const resolveSpec = (json, url) => ({specActions, specSelectors, errActio
           })
         errActions.newThrownErrBatch(preparedErrors)
       }
-
+      performanceLoggerStop("UI:action:resolveSpec ASYNC")
       return specActions.updateResolved(spec)
+
+  }
+
+  let specStr = specSelectors.specStr()
+
+  performanceLoggerStop("UI:action:resolveSpec")
+  return resolve({
+    fetch,
+    spec: json,
+    baseDoc: url,
+    modelPropertyMacro,
+    parameterMacro,
+    requestInterceptor,
+    responseInterceptor
+  }).then( ({spec, errors}) => {
+
+    addBreakToPipelineBefore(() => processErrors(spec, errors, errActions,specStr, specActions),"resolveSpec ASYNC")
     })
 }
 
